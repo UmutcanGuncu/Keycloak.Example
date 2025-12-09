@@ -1,4 +1,5 @@
 using Keycloak.AuthServices.Authentication;
+using Keycloak.AuthServices.Authorization;
 using Keycloak.Example.Services;
 using Keycloak.Example.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -39,6 +40,15 @@ builder.Services.AddSwaggerGen(setup =>
 builder.Services.AddOpenApi();
 builder.Services.AddKeycloakWebApiAuthentication(builder.Configuration);
 builder.Services.AddAuthorization();
+
+builder.Services.AddAuthorization(opt =>
+{
+    opt.AddPolicy("yetkili", c =>
+    {
+        c.RequireResourceRoles("create","read","Furkan"); // üç rolden birine sahipse işlem gerçekleşir
+    });
+}).AddKeycloakAuthorization(builder.Configuration);
+
 builder.Services.Configure<KeycloakConfiguration>(builder.Configuration.GetSection("KeycloakConfiguration"));
 builder.Services.AddScoped<KeycloakService>();
 

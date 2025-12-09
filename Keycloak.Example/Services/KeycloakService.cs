@@ -167,7 +167,7 @@ public class KeycloakService(IOptions<KeycloakConfiguration> options)
         HttpClient  httpClient = new();
         var endpoint = $"{options.Value.HostName}/admin/realms/{options.Value.Realm}/users";
         var token = await GetAccessTokenAsync(cancellationToken);
-       // httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}" );
+        httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}" );
         var message = await httpClient.GetAsync(endpoint, cancellationToken);
         var response = await message.Content.ReadAsStringAsync(cancellationToken);
         if (!message.IsSuccessStatusCode)
@@ -175,6 +175,168 @@ public class KeycloakService(IOptions<KeycloakConfiguration> options)
             throw new ArgumentException(response.ToString());
         }
         var result = JsonSerializer.Deserialize<IEnumerable<GetAllUsersResultDto>>(response);
+        return result;
+    }
+    public async Task<GetUserResultDto> GetById(string id, CancellationToken cancellationToken = default)
+    {
+        HttpClient  httpClient = new();
+        var endpoint = $"{options.Value.HostName}/admin/realms/{options.Value.Realm}/users/{id}";
+        var token = await GetAccessTokenAsync(cancellationToken);
+        httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+        var message = await httpClient.GetAsync(endpoint, cancellationToken);
+        var response = await message.Content.ReadAsStringAsync(cancellationToken);
+        if (!message.IsSuccessStatusCode)
+            throw new ArgumentException(response.ToString());
+        var result = JsonSerializer.Deserialize<GetUserResultDto>(response);
+        return result;
+    }
+
+    public async Task<List<GetUserResultDto>> GetByUsername(string username, CancellationToken cancellationToken = default)
+    {
+        HttpClient httpClient = new();
+        var endpoint = $"{options.Value.HostName}/admin/realms/{options.Value.Realm}/users?username={username}";
+        var token = await GetAccessTokenAsync(cancellationToken);
+        httpClient.DefaultRequestHeaders.Add("Authorization",$"Bearer {token}");
+        var message = await httpClient.GetAsync(endpoint, cancellationToken);
+        var response = await message.Content.ReadAsStringAsync(cancellationToken);
+        if(!message.IsSuccessStatusCode)
+            throw new ArgumentException(response.ToString());
+        var result = JsonSerializer.Deserialize<List<GetUserResultDto>>(response);
+        return result;
+    }
+
+    public async Task UpdateUser(string id, UserDto userDto, CancellationToken cancellationToken = default)
+    {
+        HttpClient httpClient = new();
+        var bodyForJson = JsonSerializer.Serialize(userDto);
+        var url = $"{options.Value.HostName}/admin/realms/{options.Value.Realm}/users/{id}";
+        var content = new StringContent(bodyForJson, Encoding.UTF8, "application/json");
+        var token = await GetAccessTokenAsync(cancellationToken);
+        httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+        var message = await httpClient.PutAsync(url, content, cancellationToken);
+        var response = await message.Content.ReadAsStringAsync(cancellationToken);
+        if (!message.IsSuccessStatusCode)
+            throw new ArgumentException(response.ToString());
+        
+    }
+
+    public async Task DeleteUser(string id, CancellationToken cancellationToken = default)
+    {
+        HttpClient httpClient = new();
+        var url = $"{options.Value.HostName}/admin/realms/{options.Value.Realm}/users/{id}";
+        var token = await GetAccessTokenAsync(cancellationToken);
+        httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+        var message = await httpClient.DeleteAsync(url, cancellationToken);
+        var response = await message.Content.ReadAsStringAsync(cancellationToken);
+        if (!message.IsSuccessStatusCode)
+            throw new ArgumentException(response.ToString());
+        
+    }
+    public async Task<IEnumerable<GetRolesResultDto>> GetAllRoles(CancellationToken cancellationToken = default)
+    {
+        HttpClient httpClient = new();
+        var url =
+            $"{options.Value.HostName}/admin/realms/{options.Value.Realm}/clients/{options.Value.ClientUuid}/roles";
+        var token = await GetAccessTokenAsync(cancellationToken);
+        httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+        var message = await httpClient.GetAsync(url, cancellationToken);
+        var response = await message.Content.ReadAsStringAsync(cancellationToken);
+        if (!message.IsSuccessStatusCode)
+            throw new ArgumentException(response.ToString());
+        var result = JsonSerializer.Deserialize<IEnumerable<GetRolesResultDto>>(response);
+        return result;
+    }
+
+    public async Task<GetRolesResultDto> GetRoleByName(string roleName, CancellationToken cancellationToken = default)
+    {
+        HttpClient httpClient = new();
+        var url =
+            $"{options.Value.HostName}/admin/realms/{options.Value.Realm}/clients/{options.Value.ClientUuid}/roles/{roleName}";
+        var token = await GetAccessTokenAsync(cancellationToken);
+        httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+        var message = await httpClient.GetAsync(url, cancellationToken);
+        var response = await message.Content.ReadAsStringAsync(cancellationToken);
+        if (!message.IsSuccessStatusCode)
+            throw new ArgumentException(response.ToString());
+        var result = JsonSerializer.Deserialize<GetRolesResultDto>(response);
+        return result;
+    }
+
+    public async Task CreateRole(CreateRoleDto createRoleDto, CancellationToken cancellationToken = default)
+    {
+        HttpClient httpClient = new();
+        var bodyForJson = JsonSerializer.Serialize(createRoleDto);
+        var url =
+            $"{options.Value.HostName}/admin/realms/{options.Value.Realm}/clients/{options.Value.ClientUuid}/roles";
+        var token = await GetAccessTokenAsync(cancellationToken);
+        httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+        var stringContent = new StringContent(bodyForJson, Encoding.UTF8, "application/json");
+        var message = await httpClient.PostAsync(url, stringContent, cancellationToken);
+        var response = await message.Content.ReadAsStringAsync(cancellationToken);
+        if (!message.IsSuccessStatusCode)
+            throw new ArgumentException(response.ToString());
+        
+    }
+    public async Task DeleteRole(string roleName, CancellationToken cancellationToken = default)
+    {
+        HttpClient httpClient = new();
+        var url =
+            $"{options.Value.HostName}/admin/realms/{options.Value.Realm}/clients/{options.Value.ClientUuid}/roles/{roleName}";
+        var token = await GetAccessTokenAsync(cancellationToken);
+        httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+        var message = await httpClient.DeleteAsync(url, cancellationToken);
+        var response = await message.Content.ReadAsStringAsync(cancellationToken);
+        if (!message.IsSuccessStatusCode)
+            throw new ArgumentException(response.ToString());
+    }
+
+    public async Task AssignRolesToUser(Guid userId, IEnumerable<RoleDto> roleDto,
+        CancellationToken cancellationToken = default)
+    {
+        HttpClient httpClient = new();
+        var url = 
+            $"{options.Value.HostName}/admin/realms/{options.Value.Realm}/users/{userId}/role-mappings/clients/{options.Value.ClientUuid}";
+        var token = await GetAccessTokenAsync(cancellationToken);
+        httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+        var json = JsonSerializer.Serialize(roleDto);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        var message = await httpClient.PostAsync(url, content, cancellationToken);
+        var response = await message.Content.ReadAsStringAsync(cancellationToken);
+        if (!message.IsSuccessStatusCode)
+            throw new ArgumentException(response.ToString());
+        
+    }
+
+    public async Task RemoveRolesFromUser(Guid userId, IEnumerable<RoleDto> roleDto,
+        CancellationToken cancellationToken = default)
+    {
+        HttpClient httpClient = new();
+        var url = 
+            $"{options.Value.HostName}/admin/realms/{options.Value.Realm}/users/{userId}/role-mappings/clients/{options.Value.ClientUuid}";
+        var token = await GetAccessTokenAsync(cancellationToken);
+        httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+        var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        var json = JsonSerializer.Serialize(roleDto);
+        request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+        var message = await httpClient.SendAsync(request, cancellationToken);
+        var response = await message.Content.ReadAsStringAsync(cancellationToken);
+        if (!message.IsSuccessStatusCode)
+            throw new ArgumentException(response.ToString());
+        
+    }
+
+    public async Task<IEnumerable<GetUserRolesDto>> GetUserRoles(Guid userId, CancellationToken cancellationToken = default)
+    {
+        HttpClient httpClient = new();
+        var url = 
+            $"{options.Value.HostName}/admin/realms/{options.Value.Realm}/users/{userId}/role-mappings/clients/{options.Value.ClientUuid}";
+        var token = await GetAccessTokenAsync(cancellationToken);
+        httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+        var message = await httpClient.GetAsync(url, cancellationToken);
+        var response = await message.Content.ReadAsStringAsync(cancellationToken);
+        if (!message.IsSuccessStatusCode)
+            throw new ArgumentException(response.ToString());
+        var result = JsonSerializer.Deserialize<IEnumerable<GetUserRolesDto>>(response);
         return result;
     }
 }
